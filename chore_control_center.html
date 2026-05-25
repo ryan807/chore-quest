@@ -1,0 +1,694 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<title>Chore Quest — Parent Control Center</title>
+<style>
+  :root {
+    --navy:#1F3A5F; --teal:#0E7C7B; --gold:#F4A300; --red:#C0392B;
+    --green:#2E8B57; --purple:#6A4C93; --silver:#B0B7BF; --bronze:#B5651D;
+    --light:#F4F1EA; --row-alt:#FAF7F0; --border:#E5DECC;
+    --text:#222; --muted:#666;
+  }
+  *{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent;-webkit-user-select:none;user-select:none;}
+  input,textarea{user-select:text;-webkit-user-select:text;}
+  html,body{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Helvetica,Arial,sans-serif;
+    background:linear-gradient(180deg,#F4F1EA 0%,#FBF9F2 100%);color:var(--text);min-height:100vh;}
+  body{padding:14px 12px 100px;max-width:780px;margin:0 auto;}
+
+  header{text-align:center;margin-bottom:14px;}
+  h1.app-title{font-size:24px;color:var(--navy);font-weight:800;}
+  h1.app-title .yr{color:var(--gold);}
+  .tag{font-style:italic;color:var(--teal);font-size:13px;margin-top:4px;}
+
+  .tabs{display:flex;gap:8px;justify-content:center;margin:14px 0 18px;}
+  .tabs a{flex:1;max-width:200px;padding:10px 16px;text-align:center;
+    border-radius:999px;text-decoration:none;font-weight:600;font-size:14px;
+    background:#fff;color:var(--navy);border:1.5px solid var(--border);}
+  .tabs a.active{background:var(--navy);color:#fff;border-color:var(--navy);}
+
+  section{background:#fff;border-radius:16px;padding:16px;margin-bottom:14px;
+    box-shadow:0 1px 4px rgba(0,0,0,.04);border:1px solid var(--border);}
+  h2{font-size:17px;color:var(--navy);margin-bottom:10px;display:flex;align-items:center;gap:8px;}
+
+  /* Week control */
+  .week-controls{display:grid;grid-template-columns:1fr;gap:10px;}
+  .week-info{background:linear-gradient(135deg,var(--navy),#2C5279);color:#fff;
+    padding:12px 14px;border-radius:10px;display:flex;justify-content:space-between;align-items:center;}
+  .week-info .label{font-size:11px;text-transform:uppercase;letter-spacing:1px;opacity:.85;}
+  .week-info .val{font-size:18px;font-weight:700;}
+  .row{display:flex;gap:8px;flex-wrap:wrap;}
+  .row > *{flex:1;}
+  input[type="date"], input[type="number"], select{
+    width:100%;padding:10px 12px;font-size:15px;border:1.5px solid var(--border);
+    border-radius:10px;background:#fff;font-family:inherit;-webkit-appearance:none;appearance:none;}
+  input[type="date"]:focus, select:focus{outline:none;border-color:var(--navy);}
+  label{font-size:12px;font-weight:600;color:var(--muted);text-transform:uppercase;letter-spacing:.5px;display:block;margin-bottom:4px;}
+
+  button{padding:11px 14px;font-size:14px;font-weight:700;border-radius:10px;
+    border:none;cursor:pointer;font-family:inherit;}
+  .btn-primary{background:var(--navy);color:#fff;}
+  .btn-gold{background:var(--gold);color:#fff;}
+  .btn-green{background:var(--green);color:#fff;}
+  .btn-red{background:var(--red);color:#fff;}
+  .btn-outline{background:#fff;color:var(--navy);border:1.5px solid var(--border);}
+  .btn-small{padding:8px 12px;font-size:13px;}
+  button:active{transform:scale(.97);}
+
+  /* Kid panel */
+  .kid-panel{border-radius:14px;border:2px solid var(--border);overflow:hidden;margin-bottom:14px;}
+  .kid-panel.adaline{border-color:var(--navy);}
+  .kid-panel.avery  {border-color:var(--teal);}
+  .kid-panel.rhett  {border-color:var(--green);}
+  .kid-panel .header-bar{padding:12px 14px;color:#fff;display:flex;justify-content:space-between;align-items:center;}
+  .kid-panel.adaline .header-bar{background:var(--navy);}
+  .kid-panel.avery   .header-bar{background:var(--teal);}
+  .kid-panel.rhett   .header-bar{background:var(--green);}
+  .kid-panel .header-bar .nm{font-size:18px;font-weight:800;}
+  .kid-panel .header-bar .set-name{font-size:12px;opacity:.9;}
+  .kid-panel .header-bar .pts{text-align:right;}
+  .kid-panel .header-bar .pts .big{font-size:22px;font-weight:800;line-height:1;}
+  .kid-panel .header-bar .pts .small{font-size:11px;opacity:.85;}
+  .kid-panel .body{padding:12px;}
+
+  .chore-row{display:flex;align-items:center;padding:8px 0;border-bottom:1px solid var(--border);gap:8px;}
+  .chore-row:last-child{border:0;}
+  .chore-row .chore-info{flex:1;min-width:0;}
+  .chore-row .chore-name{font-size:14px;font-weight:600;line-height:1.2;}
+  .chore-row .chore-pts{font-size:11px;color:var(--muted);}
+  .chore-row.bonus .chore-name{color:var(--purple);}
+  .day-grid{display:grid;grid-template-columns:repeat(6,1fr);gap:4px;width:200px;flex-shrink:0;}
+  @media (max-width:480px){
+    .chore-row{flex-direction:column;align-items:stretch;}
+    .day-grid{width:100%;}
+  }
+  .day-btn{padding:9px 0;font-size:11px;font-weight:700;border:1.5px solid var(--border);
+    background:#fff;color:var(--muted);border-radius:8px;text-align:center;cursor:pointer;
+    user-select:none;transition:all .15s;}
+  .day-btn.done{background:var(--green);color:#fff;border-color:var(--green);}
+  .day-btn.today:not(.done){border-color:var(--gold);box-shadow:0 0 0 2px rgba(244,163,0,.18);}
+
+  .bonus-row{display:grid;grid-template-columns:1fr auto auto auto;gap:6px;align-items:center;
+    margin-top:10px;padding-top:10px;border-top:1px dashed var(--border);}
+  .bonus-row .label-inline{font-size:13px;font-weight:600;color:var(--gold);}
+  .bonus-row .bonus-val{font-size:18px;font-weight:800;color:var(--gold);min-width:36px;text-align:center;}
+  .bonus-row button{padding:8px 14px;font-size:18px;font-weight:800;}
+
+  .kid-actions{display:flex;gap:6px;flex-wrap:wrap;margin-top:12px;}
+  .kid-actions button{flex:1;min-width:120px;}
+
+  /* Reward redemption form */
+  .redeem-row{display:grid;grid-template-columns:1fr auto;gap:6px;align-items:end;margin-top:10px;}
+
+  /* Toast */
+  .toast{position:fixed;bottom:20px;left:50%;transform:translateX(-50%);
+    background:var(--navy);color:#fff;padding:10px 18px;border-radius:99px;
+    font-size:14px;font-weight:600;box-shadow:0 4px 16px rgba(0,0,0,.18);
+    opacity:0;pointer-events:none;transition:opacity .25s, transform .25s;z-index:1000;}
+  .toast.show{opacity:1;transform:translateX(-50%) translateY(-6px);}
+
+  /* Settings */
+  details summary{cursor:pointer;font-weight:600;color:var(--navy);padding:10px 0;font-size:15px;}
+  details summary::-webkit-details-marker{display:none;}
+  details summary::before{content:'▸';margin-right:6px;display:inline-block;transition:transform .2s;}
+  details[open] summary::before{transform:rotate(90deg);}
+
+  .pill{display:inline-block;padding:2px 8px;border-radius:99px;font-size:11px;font-weight:600;}
+  .pill-paid{background:#E0F4E6;color:var(--green);}
+  .pill-earned{background:#FFF6D9;color:#9A6A00;}
+  .pill-pending{background:#F0F0F0;color:var(--muted);}
+
+  .bank-row{display:flex;justify-content:space-between;font-size:13px;padding:4px 0;}
+  .bank-row .v{font-weight:700;}
+
+  hr{border:0;border-top:1px solid var(--border);margin:12px 0;}
+</style>
+</head>
+<body>
+
+<header>
+  <h1 class="app-title">🎮 PARENT CONTROL CENTER <span class="yr">2026</span></h1>
+  <div class="tag">Check off chores, award points, redeem rewards</div>
+</header>
+
+<nav class="tabs">
+  <a href="chore_dashboard.html">🏆 Dashboard</a>
+  <a href="chore_control_center.html" class="active">🎮 Parent Center</a>
+</nav>
+
+<!-- WEEK CONTROLS -->
+<section>
+  <h2>📅 Current Week</h2>
+  <div class="week-controls">
+    <div class="week-info">
+      <div>
+        <div class="label">Active week</div>
+        <div class="val" id="week-display">Not started</div>
+      </div>
+      <div>
+        <div class="label" style="text-align:right;">Rotation slot</div>
+        <div class="val" id="cycle-display">—</div>
+      </div>
+    </div>
+    <div class="row">
+      <div>
+        <label>Week starts (Mon)</label>
+        <input type="date" id="week-start">
+      </div>
+      <div>
+        <label>Rotation slot</label>
+        <select id="cycle-select">
+          <option value="0">Week 1 of cycle</option>
+          <option value="1">Week 2 of cycle</option>
+          <option value="2">Week 3 of cycle</option>
+        </select>
+      </div>
+    </div>
+    <div class="row">
+      <button class="btn-primary" onclick="saveWeekSettings()">Save week settings</button>
+      <button class="btn-gold" onclick="advanceWeek()">✓ Lock week & advance →</button>
+    </div>
+    <div style="font-size:12px;color:var(--muted);font-style:italic;text-align:center;">
+      "Lock & advance" saves this week's totals to history, adds points to House Cup, then resets and rotates to next slot.
+    </div>
+  </div>
+</section>
+
+<!-- KID PANELS -->
+<div id="kid-panels"></div>
+
+<!-- RECENT ACTIVITY -->
+<section>
+  <h2>📝 Recent Activity</h2>
+  <div id="activity" style="font-size:13px;"></div>
+</section>
+
+<!-- SETTINGS -->
+<section>
+  <details>
+    <summary>⚙️ Settings & data</summary>
+    <hr>
+    <h3 style="font-size:14px;margin-bottom:8px;color:var(--navy);">Lifetime banks</h3>
+    <div id="banks"></div>
+    <hr>
+    <h3 style="font-size:14px;margin-bottom:8px;color:var(--navy);">Backup / restore</h3>
+    <div class="row" style="margin-bottom:8px;">
+      <button class="btn-outline btn-small" onclick="exportData()">⬇ Export JSON</button>
+      <button class="btn-outline btn-small" onclick="document.getElementById('import-file').click()">⬆ Import JSON</button>
+      <input type="file" id="import-file" accept=".json" style="display:none" onchange="importData(event)">
+    </div>
+    <div style="font-size:12px;color:var(--muted);margin-bottom:10px;">
+      Use Export to back up data or move it to another device. Import overwrites current data.
+    </div>
+    <hr>
+    <h3 style="font-size:14px;margin-bottom:8px;color:var(--red);">Danger zone</h3>
+    <button class="btn-red btn-small" onclick="resetCurrentWeek()">Reset current week's checkmarks</button>
+    <br><br>
+    <button class="btn-red btn-small" onclick="resetEverything()">⚠ Reset EVERYTHING</button>
+  </details>
+</section>
+
+<div class="toast" id="toast"></div>
+
+<script>
+/* ============== Shared state (mirrors dashboard) ============== */
+const APP_KEY = 'summerChoreQuest2026_v1';
+
+const KIDS = ['Adaline', 'Avery', 'Rhett'];
+const HOUSES = {
+  Adaline: { name:'House Knight',    color:'#1F3A5F', accent:'#F4A300', label:'Knight'   },
+  Avery:   { name:'House Captain',   color:'#0E7C7B', accent:'#B0B7BF', label:'Captain'  },
+  Rhett:   { name:'House Defender',  color:'#2E8B57', accent:'#B5651D', label:'Defender' },
+};
+
+const SETS = {
+  A: { name:'Set A — Knight of the Mop', chores:[
+    {key:'mop',     name:'Mop floors',                       pts:15},
+    {key:'bath1',   name:'Freshen Bathroom #1',              pts:10},
+    {key:'swlaun',  name:'Switch the laundry',               pts:5 },
+    {key:'fr_up',   name:'Clean up family room (upstairs)',  pts:8 },
+  ]},
+  B: { name:'Set B — Captain of Clean', chores:[
+    {key:'vac',     name:'Vacuum the main floor',  pts:10},
+    {key:'bath2',   name:'Freshen Bathroom #2',     pts:10},
+    {key:'dish',    name:'Empty & load dishwasher', pts:10},
+    {key:'splaun',  name:'Separate the laundry',    pts:5 },
+    {key:'mail',    name:'Check the mailbox',       pts:3 },
+  ]},
+  C: { name:'Set C — Defender of the Yard', chores:[
+    {key:'trash',   name:'Empty all trash cans (inside)',   pts:10},
+    {key:'dogfd',   name:'Feed & water the dogs',           pts:5 },
+    {key:'poop',    name:'Clean up dog poop (yard)',        pts:15},
+    {key:'fr_dn',   name:'Clean up downstairs family room', pts:8 },
+  ]},
+};
+
+const BONUS_CHORES = {
+  vacDownstairs: { key:'vac_dn',   name:'Vacuum downstairs (2x this week)', pts:12, maxTimes:2 },
+  bigTrash:      { key:'bigtrash', name:'Take out large trash cans',         pts:15, maxTimes:1 },
+};
+
+const ROTATION_CYCLE = [
+  { Adaline:'A', Avery:'B', Rhett:'C', vacDownstairs:'Adaline', bigTrash:'Rhett'   },
+  { Adaline:'B', Avery:'C', Rhett:'A', vacDownstairs:'Avery',   bigTrash:'Adaline' },
+  { Adaline:'C', Avery:'A', Rhett:'B', vacDownstairs:'Rhett',   bigTrash:'Avery'   },
+];
+
+const DAYS = ['Mon','Tue','Wed','Thu','Fri','Sat'];
+const REWARD_MENU = [
+  { name:'Extra 30 min screen time',       cost:25,  type:'INDIV'   },
+  { name:'Stay up 30 min late (1 night)',  cost:30,  type:'INDIV'   },
+  { name:'Skip-a-chore pass',              cost:50,  type:'INDIV'   },
+  { name:'Pick the family dinner',         cost:75,  type:'INDIV'   },
+  { name:'$5 cash bonus',                  cost:100, type:'INDIV'   },
+  { name:'Friend over for the day',        cost:100, type:'INDIV'   },
+  { name:'Pool Day',                       cost:400, type:'FAMILY'  },
+  { name:'Movie Theatre Night',            cost:500, type:'FAMILY'  },
+  { name:'Fat Cats Arcade Day',            cost:600, type:'FAMILY'  },
+];
+const CUP_GOAL = 1000;
+
+function defaultData() {
+  return {
+    schemaVersion: 1,
+    cycleIndex: 0,
+    weekStartISO: null,
+    weekNumber: 1,
+    currentChecks: { Adaline:{}, Avery:{}, Rhett:{} },
+    currentBonus:  { Adaline:0,  Avery:0,  Rhett:0  },
+    currentPaid$10:{ Adaline:false, Avery:false, Rhett:false },
+    housePoints:   { Adaline:0,  Avery:0,  Rhett:0  },
+    pointsBank:    { Adaline:0,  Avery:0,  Rhett:0  },
+    cashEarned:    { Adaline:0,  Avery:0,  Rhett:0  },
+    weeksHit80:    { Adaline:0,  Avery:0,  Rhett:0  },
+    familyPointsPool: 0,
+    familyRedeemed: {},
+    weekHistory: [],
+    rewards: [],
+    activity: [],
+  };
+}
+
+function load() {
+  try {
+    const s = localStorage.getItem(APP_KEY);
+    if (!s) return defaultData();
+    return Object.assign(defaultData(), JSON.parse(s));
+  } catch(e) { return defaultData(); }
+}
+function save(d) {
+  localStorage.setItem(APP_KEY, JSON.stringify(d));
+  // Trigger update for any other open tabs (dashboard)
+  // localStorage event fires automatically for other tabs in same origin.
+}
+function addActivity(d, item) {
+  d.activity = d.activity || [];
+  item.date = new Date().toISOString();
+  d.activity.push(item);
+  if (d.activity.length > 50) d.activity = d.activity.slice(-50);
+}
+
+/* ============== Calc helpers ============== */
+function getChoresForKid(kid, cycleIndex) {
+  const cycle = ROTATION_CYCLE[cycleIndex];
+  const set = SETS[cycle[kid]];
+  const list = set.chores.map(c => ({ ...c, kind:'daily', maxTimes: DAYS.length }));
+  if (cycle.vacDownstairs === kid) {
+    list.push({ ...BONUS_CHORES.vacDownstairs, kind:'bonus' });
+  }
+  if (cycle.bigTrash === kid) {
+    list.push({ ...BONUS_CHORES.bigTrash, kind:'bonus' });
+  }
+  return list;
+}
+
+function chorePtsThisWeek(kid, data) {
+  const list = getChoresForKid(kid, data.cycleIndex);
+  let earned = 0, max = 0;
+  list.forEach(c => {
+    max += c.pts * c.maxTimes;
+    const checks = (data.currentChecks[kid] || {})[c.key] || [];
+    earned += checks.filter(Boolean).length * c.pts;
+  });
+  earned += data.currentBonus[kid] || 0;
+  return { earned, max, pct: max > 0 ? earned/max : 0 };
+}
+
+function fmtDate(iso) {
+  if (!iso) return '—';
+  const d = new Date(iso + (iso.length === 10 ? 'T12:00:00' : ''));
+  return d.toLocaleDateString('en-US',{month:'short',day:'numeric'});
+}
+
+function todayDayIndex() {
+  // Returns 0 (Mon) ... 5 (Sat), or -1 if Sunday
+  const d = new Date();
+  const day = d.getDay();        // 0=Sun..6=Sat
+  if (day === 0) return -1;
+  return day - 1;                 // Mon=0, ..., Sat=5
+}
+
+function toast(msg) {
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  t.classList.add('show');
+  setTimeout(() => t.classList.remove('show'), 1700);
+}
+
+/* ============== Actions ============== */
+function toggleCheck(kid, choreKey, dayIdx) {
+  const data = load();
+  data.currentChecks[kid] = data.currentChecks[kid] || {};
+  const arr = data.currentChecks[kid][choreKey] = (data.currentChecks[kid][choreKey] || new Array(DAYS.length).fill(false));
+  // Bonus chores may have fewer slots, but storing 6 booleans is fine — UI only shows allowed slots.
+  arr[dayIdx] = !arr[dayIdx];
+  save(data);
+  render();
+}
+
+function bumpBonus(kid, delta) {
+  const data = load();
+  data.currentBonus[kid] = (data.currentBonus[kid] || 0) + delta;
+  if (data.currentBonus[kid] < 0) data.currentBonus[kid] = 0;
+  if (delta !== 0) {
+    addActivity(data, {
+      who: kid, points: Math.abs(delta), kind: delta > 0 ? 'earn' : 'spend',
+      note: delta > 0 ? 'earned bonus pts (parent-awarded)' : 'lost bonus pts'
+    });
+  }
+  save(data);
+  render();
+}
+
+function award$10(kid) {
+  const data = load();
+  if (data.currentPaid$10[kid]) {
+    toast(kid + ' was already paid this week');
+    return;
+  }
+  const r = chorePtsThisWeek(kid, data);
+  if (r.pct < 0.8) {
+    if (!confirm(kid + ' is only at ' + Math.round(r.pct*100) + '%. Pay $10 anyway?')) return;
+  }
+  data.currentPaid$10[kid] = true;
+  data.cashEarned[kid] = (data.cashEarned[kid] || 0) + 10;
+  addActivity(data, { who: kid, points: 10, kind:'earn', note:'received $10 weekly payout 💵' });
+  save(data);
+  toast(kid + ' paid $10 ✓');
+  render();
+}
+
+function redeem(kid) {
+  const sel = document.getElementById('redeem-' + kid);
+  const rewardName = sel.value;
+  if (!rewardName) return;
+  const reward = REWARD_MENU.find(r => r.name === rewardName);
+  if (!reward) return;
+  const data = load();
+  if (reward.type === 'INDIV') {
+    if ((data.pointsBank[kid] || 0) < reward.cost) {
+      toast(kid + ' needs ' + (reward.cost - (data.pointsBank[kid]||0)) + ' more pts');
+      return;
+    }
+    if (!confirm('Redeem "' + reward.name + '" for ' + kid + ' — ' + reward.cost + ' pts?')) return;
+    data.pointsBank[kid] -= reward.cost;
+    if (reward.name === '$5 cash bonus') {
+      data.cashEarned[kid] = (data.cashEarned[kid] || 0) + 5;
+    }
+    data.rewards.push({ date:new Date().toISOString(), kid, name:reward.name, cost:reward.cost, type:'INDIV' });
+    addActivity(data, { who: kid, points: reward.cost, kind:'spend', note:'redeemed: ' + reward.name });
+  } else {
+    const familyPool = KIDS.reduce((s,k) => s + (data.pointsBank[k] || 0), 0);
+    if (familyPool < reward.cost) {
+      toast('Family needs ' + (reward.cost - familyPool) + ' more pts');
+      return;
+    }
+    if (!confirm('Redeem family reward "' + reward.name + '" for ' + reward.cost + ' combined family pts?\n\nThis deducts proportionally from all 3 kids\' banks.')) return;
+    // Deduct proportionally from each kid's bank
+    const total = familyPool;
+    KIDS.forEach(k => {
+      const share = Math.round((data.pointsBank[k] / total) * reward.cost);
+      data.pointsBank[k] = Math.max(0, data.pointsBank[k] - share);
+    });
+    data.familyRedeemed[reward.name] = new Date().toISOString();
+    data.rewards.push({ date:new Date().toISOString(), kid:'FAMILY', name:reward.name, cost:reward.cost, type:'FAMILY' });
+    addActivity(data, { who:'Family', points: reward.cost, kind:'spend', note:'redeemed: ' + reward.name + ' 🎉' });
+  }
+  save(data);
+  sel.value = '';
+  toast('Redeemed: ' + reward.name);
+  render();
+}
+
+function saveWeekSettings() {
+  const data = load();
+  const dateInput = document.getElementById('week-start').value;
+  const cycleSel = parseInt(document.getElementById('cycle-select').value, 10);
+  if (!dateInput) { toast('Pick a Monday date first'); return; }
+  data.weekStartISO = dateInput;
+  data.cycleIndex = cycleSel;
+  if (!data.weekNumber) data.weekNumber = 1;
+  save(data);
+  toast('Week settings saved');
+  render();
+}
+
+function advanceWeek() {
+  const data = load();
+  if (!data.weekStartISO) { toast('Set the week start date first'); return; }
+  if (!confirm('Lock in this week\'s totals and advance to next week?\n\nThis adds points to the House Cup and resets the checkmarks.')) return;
+
+  // Calculate weekly totals and bank them
+  const snapshot = { weekStart: data.weekStartISO, cycleIndex: data.cycleIndex, weekNumber: data.weekNumber, kids: {} };
+  KIDS.forEach(kid => {
+    const r = chorePtsThisWeek(kid, data);
+    snapshot.kids[kid] = { earned: r.earned, max: r.max, paid$10: data.currentPaid$10[kid] || false };
+    // Add to running totals
+    data.housePoints[kid] = (data.housePoints[kid] || 0) + r.earned;
+    data.pointsBank[kid]  = (data.pointsBank[kid]  || 0) + r.earned;
+    if (r.pct >= 0.8) {
+      data.weeksHit80[kid] = (data.weeksHit80[kid] || 0) + 1;
+      if (!data.currentPaid$10[kid]) {
+        data.cashEarned[kid] = (data.cashEarned[kid] || 0) + 10;
+        addActivity(data, { who: kid, points: 10, kind:'earn', note:'received $10 weekly payout 💵 (auto)' });
+      }
+    }
+    addActivity(data, { who: kid, points: r.earned, kind:'earn', note:'Week ' + data.weekNumber + ' totaled: ' + r.earned + ' pts → House Cup' });
+  });
+  data.weekHistory.push(snapshot);
+
+  // Reset current week
+  data.currentChecks  = { Adaline:{}, Avery:{}, Rhett:{} };
+  data.currentBonus   = { Adaline:0,  Avery:0,  Rhett:0  };
+  data.currentPaid$10 = { Adaline:false, Avery:false, Rhett:false };
+
+  // Advance cycle index and date
+  data.cycleIndex = (data.cycleIndex + 1) % 3;
+  const d = new Date(data.weekStartISO + 'T12:00:00');
+  d.setDate(d.getDate() + 7);
+  data.weekStartISO = d.toISOString().slice(0,10);
+  data.weekNumber = (data.weekNumber || 1) + 1;
+
+  save(data);
+  toast('Week locked! On to Week ' + data.weekNumber + ' 🎉');
+  render();
+}
+
+function resetCurrentWeek() {
+  if (!confirm('Reset this week\'s checkmarks and bonus points? (Lifetime totals are preserved.)')) return;
+  const data = load();
+  data.currentChecks  = { Adaline:{}, Avery:{}, Rhett:{} };
+  data.currentBonus   = { Adaline:0,  Avery:0,  Rhett:0  };
+  data.currentPaid$10 = { Adaline:false, Avery:false, Rhett:false };
+  save(data);
+  toast('Week reset');
+  render();
+}
+
+function resetEverything() {
+  if (!confirm('⚠ ERASE ALL DATA?\n\nThis wipes every kid\'s house points, banks, history, everything. Cannot be undone.')) return;
+  if (!confirm('Are you SURE? Last chance.')) return;
+  localStorage.removeItem(APP_KEY);
+  toast('All data erased');
+  render();
+}
+
+function exportData() {
+  const data = load();
+  const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = 'chore_quest_backup_' + new Date().toISOString().slice(0,10) + '.json';
+  a.click();
+  URL.revokeObjectURL(url);
+  toast('Backup downloaded');
+}
+
+function importData(ev) {
+  const file = ev.target.files[0];
+  if (!file) return;
+  const reader = new FileReader();
+  reader.onload = (e) => {
+    try {
+      const incoming = JSON.parse(e.target.result);
+      if (!confirm('Replace all current data with this backup?')) return;
+      localStorage.setItem(APP_KEY, JSON.stringify(incoming));
+      toast('Backup restored');
+      render();
+    } catch(err) {
+      alert('Could not read file: ' + err.message);
+    }
+  };
+  reader.readAsText(file);
+}
+
+/* ============== Rendering ============== */
+function render() {
+  const data = load();
+
+  // Week info
+  document.getElementById('week-display').textContent =
+    data.weekStartISO ? 'Week ' + data.weekNumber + ' • ' + fmtDate(data.weekStartISO) : 'Not started';
+  document.getElementById('cycle-display').textContent = (data.cycleIndex + 1) + ' / 3';
+  document.getElementById('week-start').value = data.weekStartISO || '';
+  document.getElementById('cycle-select').value = data.cycleIndex;
+
+  // Kid panels
+  const wrap = document.getElementById('kid-panels');
+  wrap.innerHTML = '';
+  const todayIdx = todayDayIndex();
+  KIDS.forEach(kid => {
+    const cycle = ROTATION_CYCLE[data.cycleIndex];
+    const setLetter = cycle[kid];
+    const set = SETS[setLetter];
+    const list = getChoresForKid(kid, data.cycleIndex);
+    const r = chorePtsThisWeek(kid, data);
+    const pct = Math.round(r.pct * 100);
+
+    const panel = document.createElement('section');
+    panel.className = 'kid-panel ' + kid.toLowerCase();
+
+    // Header bar
+    const header = `
+      <div class="header-bar">
+        <div>
+          <div class="nm">${kid}</div>
+          <div class="set-name">${set.name}</div>
+        </div>
+        <div class="pts">
+          <div class="big">${r.earned}<span style="font-size:13px;opacity:.8;"> / ${r.max}</span></div>
+          <div class="small">${pct}% • ${pct >= 80 ? (data.currentPaid$10[kid] ? '$10 paid' : '$10 earned!') : 'need '+(80-pct)+'% more for $10'}</div>
+        </div>
+      </div>
+    `;
+
+    // Chore rows
+    let rows = '';
+    list.forEach(c => {
+      const checks = (data.currentChecks[kid] || {})[c.key] || new Array(DAYS.length).fill(false);
+      const slots = c.maxTimes;
+      const buttons = DAYS.map((d, i) => {
+        // For bonus chores with fewer slots, allow any day but limit count
+        const checkedCount = checks.filter(Boolean).length;
+        const isDone = !!checks[i];
+        const atLimit = c.kind === 'bonus' && checkedCount >= slots && !isDone;
+        const today = i === todayIdx;
+        const cls = [
+          'day-btn',
+          isDone ? 'done' : '',
+          today ? 'today' : '',
+          atLimit ? 'disabled' : '',
+        ].join(' ');
+        const dis = atLimit ? 'style="opacity:.35;pointer-events:none;"' : '';
+        return `<div class="${cls}" ${dis} onclick="toggleCheck('${kid}','${c.key}',${i})">${d.charAt(0)}</div>`;
+      }).join('');
+      rows += `
+        <div class="chore-row ${c.kind === 'bonus' ? 'bonus' : ''}">
+          <div class="chore-info">
+            <div class="chore-name">${c.kind === 'bonus' ? '⭐ ' : ''}${c.name}</div>
+            <div class="chore-pts">${c.pts} pts each ${c.kind === 'bonus' ? '• max ' + slots + 'x/wk' : ''}</div>
+          </div>
+          <div class="day-grid">${buttons}</div>
+        </div>
+      `;
+    });
+
+    // Bonus pts row
+    const bonusRow = `
+      <div class="bonus-row">
+        <div class="label-inline">⭐ Parent bonus pts (initiative, kindness, etc.)</div>
+        <button class="btn-outline btn-small" onclick="bumpBonus('${kid}', -5)">−5</button>
+        <div class="bonus-val">${data.currentBonus[kid] || 0}</div>
+        <button class="btn-outline btn-small" onclick="bumpBonus('${kid}', 5)">+5</button>
+      </div>
+    `;
+
+    // Reward redemption
+    const indivOpts = REWARD_MENU.filter(r => r.type === 'INDIV')
+      .map(r => `<option value="${r.name}">${r.name} — ${r.cost} pts</option>`).join('');
+    const familyOpts = REWARD_MENU.filter(r => r.type === 'FAMILY')
+      .map(r => `<option value="${r.name}">${r.name} — ${r.cost} family pts</option>`).join('');
+
+    const actions = `
+      <div class="kid-actions">
+        <button class="btn-green" onclick="award$10('${kid}')" ${data.currentPaid$10[kid] ? 'disabled style="opacity:.5;"' : ''}>
+          ${data.currentPaid$10[kid] ? '✓ $10 paid this week' : '💵 Award $10'}
+        </button>
+      </div>
+      <div class="redeem-row">
+        <div>
+          <label>Redeem reward</label>
+          <select id="redeem-${kid}">
+            <option value="">— pick a reward —</option>
+            <optgroup label="Individual">${indivOpts}</optgroup>
+            <optgroup label="Family (combined pts)">${familyOpts}</optgroup>
+          </select>
+        </div>
+        <button class="btn-primary btn-small" onclick="redeem('${kid}')">Redeem</button>
+      </div>
+      <div style="font-size:12px;color:var(--muted);margin-top:6px;">
+        Bank balance: <strong>${data.pointsBank[kid] || 0} pts</strong> • House points so far: <strong>${(data.housePoints[kid] || 0) + r.earned}</strong>
+      </div>
+    `;
+
+    panel.innerHTML = header + `<div class="body">${rows}${bonusRow}${actions}</div>`;
+    wrap.appendChild(panel);
+  });
+
+  // Activity feed
+  const act = document.getElementById('activity');
+  act.innerHTML = '';
+  const items = (data.activity || []).slice(-10).reverse();
+  if (items.length === 0) {
+    act.innerHTML = '<div style="color:var(--muted);font-style:italic;text-align:center;padding:14px;">No activity yet.</div>';
+  } else {
+    items.forEach(a => {
+      const el = document.createElement('div');
+      el.style.cssText = 'display:flex;justify-content:space-between;padding:6px 0;border-bottom:1px solid var(--border);';
+      el.innerHTML = `
+        <div><strong>${a.who || ''}</strong> ${a.note || ''}</div>
+        <div style="color:${a.kind === 'spend' ? 'var(--red)' : 'var(--gold)'};font-weight:700;">${a.kind === 'spend' ? '−' : '+'}${a.points || 0}</div>
+      `;
+      act.appendChild(el);
+    });
+  }
+
+  // Banks
+  const banks = document.getElementById('banks');
+  banks.innerHTML = KIDS.map(k => `
+    <div class="bank-row">
+      <span><strong style="color:${HOUSES[k].color}">${k}</strong> — House: ${data.housePoints[k] || 0} • Bank: ${data.pointsBank[k] || 0} • Cash: $${data.cashEarned[k] || 0} • Weeks at 80%+: ${data.weeksHit80[k] || 0}</span>
+    </div>
+  `).join('');
+}
+
+window.addEventListener('storage', render);
+render();
+</script>
+</body>
+</html>
+

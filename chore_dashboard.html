@@ -1,0 +1,424 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<title>Chore Quest — Family Dashboard</title>
+<style>
+  :root {
+    --navy:#1F3A5F; --teal:#0E7C7B; --gold:#F4A300; --red:#C0392B;
+    --green:#2E8B57; --purple:#6A4C93; --silver:#B0B7BF; --bronze:#B5651D;
+    --light:#F4F1EA; --row-alt:#FAF7F0; --border:#E5DECC;
+    --text:#222; --muted:#666;
+  }
+  *{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent;}
+  html,body{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Helvetica,Arial,sans-serif;
+    background:linear-gradient(180deg,#F4F1EA 0%,#FBF9F2 100%);color:var(--text);min-height:100vh;}
+  body{padding:14px 12px 80px;max-width:780px;margin:0 auto;}
+
+  header{text-align:center;margin-bottom:20px;}
+  h1.app-title{font-size:26px;letter-spacing:.5px;color:var(--navy);font-weight:800;}
+  h1.app-title .yr{color:var(--gold);}
+  .tag{font-style:italic;color:var(--teal);font-size:13px;margin-top:4px;}
+
+  /* Tab bar */
+  .tabs{display:flex;gap:8px;justify-content:center;margin:14px 0 18px;}
+  .tabs a{flex:1;max-width:200px;padding:10px 16px;text-align:center;
+    border-radius:999px;text-decoration:none;font-weight:600;font-size:14px;
+    background:#fff;color:var(--navy);border:1.5px solid var(--border);}
+  .tabs a.active{background:var(--navy);color:#fff;border-color:var(--navy);}
+
+  /* Section */
+  section{background:#fff;border-radius:16px;padding:18px;margin-bottom:14px;
+    box-shadow:0 1px 4px rgba(0,0,0,.04);border:1px solid var(--border);}
+  h2{font-size:18px;color:var(--navy);margin-bottom:12px;display:flex;align-items:center;gap:8px;}
+
+  /* HOUSE POINTS */
+  .house-grid{display:grid;grid-template-columns:1fr;gap:12px;}
+  @media (min-width:560px){.house-grid{grid-template-columns:1fr 1fr 1fr;}}
+  .house-card{border-radius:14px;padding:14px;color:#fff;position:relative;overflow:hidden;}
+  .house-card .badge{font-size:11px;text-transform:uppercase;letter-spacing:1.5px;opacity:.85;}
+  .house-card .member{font-size:15px;font-weight:600;margin:2px 0 8px;}
+  .house-card .points{font-size:42px;font-weight:800;line-height:1;}
+  .house-card .points .lbl{font-size:13px;font-weight:500;opacity:.85;margin-left:4px;}
+  .house-card .progress{height:8px;background:rgba(255,255,255,.25);border-radius:99px;margin:10px 0 6px;overflow:hidden;}
+  .house-card .progress .fill{height:100%;background:#fff;border-radius:99px;transition:width .4s;}
+  .house-card .status{font-size:12px;font-weight:600;opacity:.95;}
+  .house-card .crown{position:absolute;top:8px;right:10px;font-size:22px;opacity:.95;}
+
+  /* Leader callout */
+  .leader{margin-top:12px;text-align:center;padding:10px;border-radius:10px;
+    background:linear-gradient(135deg,#FFF7E0,#FDEFC1);color:var(--navy);
+    font-weight:700;border:1px dashed var(--gold);font-size:14px;}
+
+  /* This week */
+  .week-banner{display:flex;justify-content:space-between;align-items:center;
+    background:linear-gradient(135deg,var(--navy),#2C5279);color:#fff;
+    padding:12px 14px;border-radius:10px;margin-bottom:12px;font-size:14px;}
+  .week-banner .wk{font-size:18px;font-weight:700;}
+  .week-banner .date{opacity:.85;font-size:12px;}
+
+  .kid-row{padding:12px;border-radius:10px;background:var(--row-alt);margin-bottom:8px;
+    display:grid;grid-template-columns:1fr auto;gap:10px;align-items:center;}
+  .kid-row .info{}
+  .kid-row .name{font-weight:700;font-size:15px;}
+  .kid-row .set{font-size:12px;color:var(--muted);}
+  .kid-row .progress-text{font-size:13px;color:var(--muted);margin-top:4px;}
+  .kid-row .bar{height:8px;background:#eee;border-radius:99px;overflow:hidden;margin-top:6px;}
+  .kid-row .bar .fill{height:100%;border-radius:99px;transition:width .4s;}
+  .kid-row .pct{font-size:22px;font-weight:800;text-align:right;line-height:1;}
+  .kid-row .pct .small{font-size:11px;display:block;font-weight:500;color:var(--muted);}
+
+  .kid-row.adaline .bar .fill{background:var(--navy);}
+  .kid-row.avery .bar .fill{background:var(--teal);}
+  .kid-row.rhett .bar .fill{background:var(--green);}
+  .kid-row.adaline .name{color:var(--navy);}
+  .kid-row.avery .name{color:var(--teal);}
+  .kid-row.rhett .name{color:var(--green);}
+
+  .badge-paid{display:inline-block;background:var(--green);color:#fff;
+    padding:2px 8px;border-radius:99px;font-size:11px;margin-left:6px;font-weight:600;}
+  .badge-pending{display:inline-block;background:#eee;color:var(--muted);
+    padding:2px 8px;border-radius:99px;font-size:11px;margin-left:6px;}
+
+  /* Family rewards */
+  .reward{display:grid;grid-template-columns:1fr auto;gap:10px;align-items:center;
+    padding:10px 12px;border-radius:10px;background:var(--row-alt);margin-bottom:6px;}
+  .reward .name{font-weight:600;font-size:14px;}
+  .reward .cost{font-size:12px;color:var(--muted);}
+  .reward .bar{height:6px;background:#eee;border-radius:99px;overflow:hidden;margin-top:4px;width:100%;}
+  .reward .bar .fill{height:100%;background:var(--red);border-radius:99px;transition:width .4s;}
+  .reward .status{font-size:13px;font-weight:700;color:var(--red);text-align:right;min-width:80px;}
+  .reward.unlocked .status{color:var(--green);}
+  .reward.unlocked .bar .fill{background:var(--green);}
+
+  /* Empty / loading */
+  .empty{text-align:center;padding:20px;color:var(--muted);font-style:italic;}
+  .refresh-row{text-align:center;font-size:12px;color:var(--muted);margin-top:10px;}
+  .refresh-row button{background:none;border:1.5px solid var(--border);border-radius:999px;
+    padding:6px 14px;font-size:13px;color:var(--navy);cursor:pointer;font-weight:600;}
+
+  /* Activity feed */
+  .activity-item{display:grid;grid-template-columns:auto 1fr auto;gap:10px;padding:8px 0;
+    border-bottom:1px solid var(--border);align-items:center;font-size:13px;}
+  .activity-item:last-child{border:0;}
+  .activity-item .when{color:var(--muted);font-size:11px;min-width:70px;}
+  .activity-item .who{font-weight:600;}
+  .activity-item .pts{font-weight:700;color:var(--gold);}
+  .activity-item .pts.spend{color:var(--red);}
+
+  /* Footer */
+  footer{text-align:center;font-size:11px;color:var(--muted);margin-top:20px;padding:14px;}
+</style>
+</head>
+<body>
+
+<header>
+  <h1 class="app-title">SUMMER CHORE QUEST <span class="yr">2026</span></h1>
+  <div class="tag">The official Roberts family summer game</div>
+</header>
+
+<nav class="tabs">
+  <a href="chore_dashboard.html" class="active">🏆 Dashboard</a>
+  <a href="chore_control_center.html">🎮 Parent Center</a>
+</nav>
+
+<!-- HOUSE POINTS -->
+<section>
+  <h2>⭐ House Points — Race to the Cup</h2>
+  <div id="house-cards" class="house-grid"></div>
+  <div class="leader" id="leader"></div>
+</section>
+
+<!-- THIS WEEK -->
+<section>
+  <h2>📅 This Week</h2>
+  <div class="week-banner">
+    <div>
+      <div class="wk" id="week-label">Week —</div>
+      <div class="date" id="week-date">No week set</div>
+    </div>
+    <div style="font-size:30px;">🗓️</div>
+  </div>
+  <div id="kid-rows"></div>
+</section>
+
+<!-- FAMILY REWARDS -->
+<section>
+  <h2>🎉 Family Rewards Progress</h2>
+  <div id="family-rewards"></div>
+</section>
+
+<!-- RECENT ACTIVITY -->
+<section>
+  <h2>📝 Recent Activity</h2>
+  <div id="activity"></div>
+</section>
+
+<div class="refresh-row">
+  <button onclick="render()">Refresh</button>
+  <div style="margin-top:6px;" id="last-updated"></div>
+</div>
+
+<footer>Open <strong>Parent Center</strong> tab to record chores and award points.</footer>
+
+<script>
+/* ============== Shared state ============== */
+const APP_KEY = 'summerChoreQuest2026_v1';
+
+const KIDS = ['Adaline', 'Avery', 'Rhett'];
+const HOUSES = {
+  Adaline: { name:'House Knight',    color:'#1F3A5F', accent:'#F4A300', label:'Knight'   },
+  Avery:   { name:'House Captain',   color:'#0E7C7B', accent:'#B0B7BF', label:'Captain'  },
+  Rhett:   { name:'House Defender',  color:'#2E8B57', accent:'#B5651D', label:'Defender' },
+};
+
+const SETS = {
+  A: { name:'Set A — Knight of the Mop', chores:[
+    {key:'mop',     name:'Mop floors',                       pts:15},
+    {key:'bath1',   name:'Freshen Bathroom #1',              pts:10},
+    {key:'swlaun',  name:'Switch the laundry',               pts:5 },
+    {key:'fr_up',   name:'Clean up family room (upstairs)',  pts:8 },
+  ]},
+  B: { name:'Set B — Captain of Clean', chores:[
+    {key:'vac',     name:'Vacuum the main floor',  pts:10},
+    {key:'bath2',   name:'Freshen Bathroom #2',     pts:10},
+    {key:'dish',    name:'Empty & load dishwasher', pts:10},
+    {key:'splaun',  name:'Separate the laundry',    pts:5 },
+    {key:'mail',    name:'Check the mailbox',       pts:3 },
+  ]},
+  C: { name:'Set C — Defender of the Yard', chores:[
+    {key:'trash',   name:'Empty all trash cans (inside)',   pts:10},
+    {key:'dogfd',   name:'Feed & water the dogs',           pts:5 },
+    {key:'poop',    name:'Clean up dog poop (yard)',        pts:15},
+    {key:'fr_dn',   name:'Clean up downstairs family room', pts:8 },
+  ]},
+};
+
+const BONUS_CHORES = {
+  vacDownstairs: { key:'vac_dn', name:'Vacuum downstairs (2x this week)', pts:12, maxTimes:2 },
+  bigTrash:      { key:'bigtrash', name:'Take out large trash cans (Sun)', pts:15, maxTimes:1 },
+};
+
+const ROTATION_CYCLE = [
+  { Adaline:'A', Avery:'B', Rhett:'C', vacDownstairs:'Adaline', bigTrash:'Rhett'   },
+  { Adaline:'B', Avery:'C', Rhett:'A', vacDownstairs:'Avery',   bigTrash:'Adaline' },
+  { Adaline:'C', Avery:'A', Rhett:'B', vacDownstairs:'Rhett',   bigTrash:'Avery'   },
+];
+
+const DAYS = ['Mon','Tue','Wed','Thu','Fri','Sat'];  // Mon-Sat as requested
+const REWARD_MENU = [
+  { name:'Extra 30 min screen time',       cost:25,  type:'INDIV'   },
+  { name:'Stay up 30 min late (1 night)',  cost:30,  type:'INDIV'   },
+  { name:'Skip-a-chore pass',              cost:50,  type:'INDIV'   },
+  { name:'Pick the family dinner',         cost:75,  type:'INDIV'   },
+  { name:'$5 cash bonus',                  cost:100, type:'INDIV'   },
+  { name:'Friend over for the day',        cost:100, type:'INDIV'   },
+  { name:'Pool Day',                       cost:400, type:'FAMILY'  },
+  { name:'Movie Theatre Night',            cost:500, type:'FAMILY'  },
+  { name:'Fat Cats Arcade Day',            cost:600, type:'FAMILY'  },
+];
+const CUP_GOAL = 1000;
+
+function defaultData() {
+  return {
+    schemaVersion: 1,
+    cycleIndex: 0,                                  // 0,1,2 (Week 1/2/3 of rotation)
+    weekStartISO: null,                             // Monday's date for the active week
+    weekNumber: 1,                                  // Summer week number (1..n)
+    currentChecks: { Adaline:{}, Avery:{}, Rhett:{} },
+    currentBonus:  { Adaline:0,  Avery:0,  Rhett:0  },
+    currentPaid$10:{ Adaline:false, Avery:false, Rhett:false },
+    housePoints:   { Adaline:0,  Avery:0,  Rhett:0  },
+    pointsBank:    { Adaline:0,  Avery:0,  Rhett:0  },
+    cashEarned:    { Adaline:0,  Avery:0,  Rhett:0  },
+    weeksHit80:    { Adaline:0,  Avery:0,  Rhett:0  },
+    familyPointsPool: 0,
+    familyRedeemed: {},                             // { rewardName: redeemedDateISO }
+    weekHistory: [],
+    rewards: [],
+    activity: [],
+  };
+}
+
+function load() {
+  try {
+    const s = localStorage.getItem(APP_KEY);
+    if (!s) return defaultData();
+    return Object.assign(defaultData(), JSON.parse(s));
+  } catch(e) { return defaultData(); }
+}
+
+/* ============== Calculation helpers ============== */
+function chorePtsThisWeek(kid, data) {
+  const cycle = ROTATION_CYCLE[data.cycleIndex];
+  const setLetter = cycle[kid];
+  const set = SETS[setLetter];
+  let earned = 0, max = 0;
+  // Daily chores: each can be done up to 6 times (Mon-Sat)
+  set.chores.forEach(c => {
+    max += c.pts * DAYS.length;
+    const checks = (data.currentChecks[kid] || {})[c.key] || [];
+    earned += checks.filter(Boolean).length * c.pts;
+  });
+  // Bonus chores assigned to this kid
+  if (cycle.vacDownstairs === kid) {
+    max += BONUS_CHORES.vacDownstairs.pts * BONUS_CHORES.vacDownstairs.maxTimes;
+    const checks = (data.currentChecks[kid] || {})['vac_dn'] || [];
+    earned += checks.filter(Boolean).length * BONUS_CHORES.vacDownstairs.pts;
+  }
+  if (cycle.bigTrash === kid) {
+    max += BONUS_CHORES.bigTrash.pts * BONUS_CHORES.bigTrash.maxTimes;
+    const checks = (data.currentChecks[kid] || {})['bigtrash'] || [];
+    earned += checks.filter(Boolean).length * BONUS_CHORES.bigTrash.pts;
+  }
+  // Bonus points awarded directly
+  earned += (data.currentBonus[kid] || 0);
+  return { earned, max, pct: max > 0 ? earned/max : 0 };
+}
+
+function fmtDate(iso) {
+  if (!iso) return '—';
+  const d = new Date(iso + 'T12:00:00');
+  return d.toLocaleDateString('en-US',{month:'short',day:'numeric',year:'numeric'});
+}
+
+/* ============== Rendering ============== */
+function render() {
+  const data = load();
+
+  // House cards
+  const hc = document.getElementById('house-cards');
+  hc.innerHTML = '';
+  const totalPts = {};
+  KIDS.forEach(k => totalPts[k] = data.housePoints[k] + chorePtsThisWeek(k, data).earned);
+  const leader = KIDS.reduce((a,b) => totalPts[a] >= totalPts[b] ? a : b);
+
+  KIDS.forEach(kid => {
+    const h = HOUSES[kid];
+    const pts = totalPts[kid];
+    const pct = Math.min(100, Math.round(pts/CUP_GOAL*100));
+    const status =
+      pts >= CUP_GOAL ? '🏆 HOUSE CUP WINNER!' :
+      pts >= 750 ? '⭐ Almost there!' :
+      pts >= 500 ? 'Going strong' :
+      pts >= 250 ? 'Building points' : 'Just starting';
+    const card = document.createElement('div');
+    card.className = 'house-card';
+    card.style.background = `linear-gradient(135deg, ${h.color}, ${shade(h.color, -15)})`;
+    card.innerHTML = `
+      ${kid === leader && pts > 0 ? '<div class="crown">👑</div>' : ''}
+      <div class="badge">${h.name.toUpperCase()}</div>
+      <div class="member">${kid} — the ${h.label}</div>
+      <div class="points">${pts}<span class="lbl">/ ${CUP_GOAL} pts</span></div>
+      <div class="progress"><div class="fill" style="width:${pct}%;background:${h.accent}"></div></div>
+      <div class="status">${status}</div>
+    `;
+    hc.appendChild(card);
+  });
+
+  // Leader callout
+  const leaderEl = document.getElementById('leader');
+  const lp = totalPts[leader];
+  if (lp > 0) {
+    leaderEl.innerHTML = `🏆 Current House Cup leader: <strong>${HOUSES[leader].name}</strong> (${leader}) with ${lp} pts`;
+  } else {
+    leaderEl.innerHTML = `🌟 The race begins! No points yet — first chores earn the first lead.`;
+  }
+
+  // Week info
+  document.getElementById('week-label').textContent =
+    data.weekStartISO ? `Week ${data.weekNumber}` : 'Week — (not started)';
+  document.getElementById('week-date').textContent =
+    data.weekStartISO
+      ? `Week of ${fmtDate(data.weekStartISO)} • Cycle slot ${data.cycleIndex+1}/3`
+      : 'Open the Parent Center to set the start date';
+
+  // Kid rows
+  const kr = document.getElementById('kid-rows');
+  kr.innerHTML = '';
+  const cycle = ROTATION_CYCLE[data.cycleIndex];
+  KIDS.forEach(kid => {
+    const setLetter = cycle[kid];
+    const r = chorePtsThisWeek(kid, data);
+    const pctNum = Math.round(r.pct*100);
+    const badge = data.currentPaid$10[kid]
+      ? '<span class="badge-paid">$10 paid</span>'
+      : (pctNum >= 80 ? '<span class="badge-paid">$10 earned!</span>' : '<span class="badge-pending">'+(80-pctNum)+'% to $10</span>');
+    const row = document.createElement('div');
+    row.className = 'kid-row ' + kid.toLowerCase();
+    row.innerHTML = `
+      <div class="info">
+        <div class="name">${kid} ${badge}</div>
+        <div class="set">${SETS[setLetter].name}</div>
+        <div class="progress-text">${r.earned} / ${r.max} pts this week</div>
+        <div class="bar"><div class="fill" style="width:${pctNum}%"></div></div>
+      </div>
+      <div class="pct">${pctNum}%<span class="small">complete</span></div>
+    `;
+    kr.appendChild(row);
+  });
+
+  // Family rewards
+  const fr = document.getElementById('family-rewards');
+  fr.innerHTML = '';
+  // Family pool = total points across kids' banks (independent of house pts)
+  const familyPool = KIDS.reduce((s,k) => s + data.pointsBank[k], 0);
+  REWARD_MENU.filter(r => r.type === 'FAMILY').forEach(r => {
+    const redeemed = data.familyRedeemed[r.name];
+    const pct = Math.min(100, Math.round(familyPool / r.cost * 100));
+    const el = document.createElement('div');
+    el.className = 'reward' + (redeemed || familyPool >= r.cost ? ' unlocked' : '');
+    el.innerHTML = `
+      <div>
+        <div class="name">${r.name}</div>
+        <div class="cost">${r.cost} family pts needed</div>
+        <div class="bar"><div class="fill" style="width:${pct}%"></div></div>
+      </div>
+      <div class="status">${redeemed ? 'Redeemed '+fmtDate(redeemed.slice(0,10)) : (familyPool >= r.cost ? 'UNLOCKED' : (r.cost - familyPool) + ' to go')}</div>
+    `;
+    fr.appendChild(el);
+  });
+
+  // Activity feed
+  const act = document.getElementById('activity');
+  act.innerHTML = '';
+  const items = (data.activity || []).slice(-12).reverse();
+  if (items.length === 0) {
+    act.innerHTML = '<div class="empty">No activity yet — record chores in the Parent Center.</div>';
+  } else {
+    items.forEach(a => {
+      const el = document.createElement('div');
+      el.className = 'activity-item';
+      el.innerHTML = `
+        <div class="when">${a.date ? fmtDate(a.date.slice(0,10)) : ''}</div>
+        <div><strong class="who">${a.who || ''}</strong> ${a.note || ''}</div>
+        <div class="pts ${a.kind === 'spend' ? 'spend' : ''}">${a.kind === 'spend' ? '−' : '+'}${a.points || 0}</div>
+      `;
+      act.appendChild(el);
+    });
+  }
+
+  document.getElementById('last-updated').textContent = 'Last updated ' + new Date().toLocaleTimeString();
+}
+
+/* helper: shade a hex color */
+function shade(hex, pct) {
+  const n = parseInt(hex.slice(1), 16);
+  let r = (n >> 16) + Math.round(255*pct/100);
+  let g = ((n >> 8) & 255) + Math.round(255*pct/100);
+  let b = (n & 255) + Math.round(255*pct/100);
+  r = Math.max(0,Math.min(255,r)); g = Math.max(0,Math.min(255,g)); b = Math.max(0,Math.min(255,b));
+  return '#' + ((r<<16)|(g<<8)|b).toString(16).padStart(6,'0');
+}
+
+// Auto-refresh every 5s in case parent center is updating in another tab
+setInterval(render, 5000);
+window.addEventListener('storage', render);
+render();
+</script>
+</body>
+</html>
+

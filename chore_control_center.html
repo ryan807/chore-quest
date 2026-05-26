@@ -80,6 +80,7 @@
   .chore-row .chore-name{font-size:14px;font-weight:600;line-height:1.2;}
   .chore-row .chore-pts{font-size:11px;color:var(--muted);}
   .chore-row.bonus .chore-name{color:var(--purple);}
+  .chore-row.personal .chore-name{color:var(--gold);}
   .day-grid{display:grid;grid-template-columns:repeat(6,1fr);gap:4px;width:200px;flex-shrink:0;}
   @media (max-width:480px){
     .chore-row{flex-direction:column;align-items:stretch;}
@@ -246,6 +247,13 @@ const SETS = {
   ]},
 };
 
+// Per-kid daily chores (always present regardless of rotation)
+const PERSONAL_CHORES = {
+  Adaline: [{ key:'bedroom', name:'Freshen up your bedroom', pts:5 }],
+  Avery:   [{ key:'bedroom', name:'Freshen up your bedroom', pts:5 }],
+  Rhett:   [{ key:'bedroom', name:'Freshen up your bedroom', pts:5 }],
+};
+
 const BONUS_CHORES = {
   vacDownstairs: { key:'vac_dn',   name:'Vacuum downstairs (2x this week)', pts:12, maxTimes:2 },
   bigTrash:      { key:'bigtrash', name:'Take out large trash cans',         pts:15, maxTimes:1 },
@@ -316,6 +324,8 @@ function getChoresForKid(kid, cycleIndex) {
   const cycle = ROTATION_CYCLE[cycleIndex];
   const set = SETS[cycle[kid]];
   const list = set.chores.map(c => ({ ...c, kind:'daily', maxTimes: DAYS.length }));
+  // Personal chores (per-kid, always present)
+  (PERSONAL_CHORES[kid] || []).forEach(c => list.push({ ...c, kind:'personal', maxTimes: DAYS.length }));
   if (cycle.vacDownstairs === kid) {
     list.push({ ...BONUS_CHORES.vacDownstairs, kind:'bonus' });
   }
@@ -411,7 +421,7 @@ function redeem(kid) {
   if (reward.type === 'INDIV') {
     if ((data.pointsBank[kid] || 0) < reward.cost) {
       toast(kid + ' needs ' + (reward.cost - (data.pointsBank[kid]||0)) + ' more pts');
-      return;
+       return;
     }
     if (!confirm('Redeem "' + reward.name + '" for ' + kid + ' — ' + reward.cost + ' pts?')) return;
     data.pointsBank[kid] -= reward.cost;
@@ -607,9 +617,9 @@ function render() {
         return `<div class="${cls}" ${dis} onclick="toggleCheck('${kid}','${c.key}',${i})">${d.charAt(0)}</div>`;
       }).join('');
       rows += `
-        <div class="chore-row ${c.kind === 'bonus' ? 'bonus' : ''}">
+        <div class="chore-row ${c.kind === 'bonus' ? 'bonus' : (c.kind === 'personal' ? 'personal' : '')}">
           <div class="chore-info">
-            <div class="chore-name">${c.kind === 'bonus' ? '⭐ ' : ''}${c.name}</div>
+            <div class="chore-name">${c.kind === 'bonus' ? '⭐ ' : (c.kind === 'personal' ? '🛏️ ' : '')}${c.name}</div>
             <div class="chore-pts">${c.pts} pts each ${c.kind === 'bonus' ? '• max ' + slots + 'x/wk' : ''}</div>
           </div>
           <div class="day-grid">${buttons}</div>
@@ -630,7 +640,7 @@ function render() {
     // Reward redemption
     const indivOpts = REWARD_MENU.filter(r => r.type === 'INDIV')
       .map(r => `<option value="${r.name}">${r.name} — ${r.cost} pts</option>`).join('');
-    const familyOpts = REWARD_MENU.filter(r => r.type === 'FAMILY')
+    const familyOpts = REWARD_MEU.filter(r => r.type === 'FAMILY')
       .map(r => `<option value="${r.name}">${r.name} — ${r.cost} family pts</option>`).join('');
 
     const actions = `
@@ -691,4 +701,3 @@ render();
 </script>
 </body>
 </html>
-

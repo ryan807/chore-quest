@@ -233,7 +233,7 @@ const SETS = {
     {key:'fr_up',   name:'Clean up family room (upstairs)',  pts:8 },
   ]},
   B: { name:'Set B — Captain of Clean', chores:[
-    {key:'vac',     name:'Vacuum the main floor',  pts:10},
+    {key:'vac',     name:'Vacuum main floor (Tue + Fri)', pts:10, maxTimes:2},
     {key:'bath2',   name:'Freshen Bathroom #2',     pts:10},
     {key:'dish',    name:'Empty & load dishwasher', pts:10},
     {key:'splaun',  name:'Separate the laundry',    pts:5 },
@@ -255,7 +255,7 @@ const PERSONAL_CHORES = {
 };
 
 const BONUS_CHORES = {
-  vacDownstairs: { key:'vac_dn',   name:'Vacuum downstairs (2x this week)', pts:12, maxTimes:2 },
+  vacDownstairs: { key:'vac_dn',   name:'Vacuum downstairs (Tue + Fri)', pts:10, maxTimes:2 },
   bigTrash:      { key:'bigtrash', name:'Take out large trash cans',         pts:15, maxTimes:1 },
 };
 
@@ -273,9 +273,9 @@ const REWARD_MENU = [
   { name:'Pick the family dinner',         cost:75,  type:'INDIV'   },
   { name:'$5 cash bonus',                  cost:100, type:'INDIV'   },
   { name:'Friend over for the day',        cost:100, type:'INDIV'   },
-  { name:'Pool Day',                       cost:400, type:'FAMILY'  },
-  { name:'Movie Theatre Night',            cost:500, type:'FAMILY'  },
-  { name:'Fat Cats Arcade Day',            cost:600, type:'FAMILY'  },
+  { name:'Pool Day',                       cost:600, type:'FAMILY'  },
+  { name:'Movie Theatre Night',            cost:750, type:'FAMILY'  },
+  { name:'Fat Cats Arcade Day',            cost:900, type:'FAMILY'  },
 ];
 const CUP_GOAL = 1000;
 
@@ -323,9 +323,9 @@ function addActivity(d, item) {
 function getChoresForKid(kid, cycleIndex) {
   const cycle = ROTATION_CYCLE[cycleIndex];
   const set = SETS[cycle[kid]];
-  const list = set.chores.map(c => ({ ...c, kind:'daily', maxTimes: DAYS.length }));
+  const list = set.chores.map(c => ({ ...c, kind:'daily', maxTimes: c.maxTimes || DAYS.length }));
   // Personal chores (per-kid, always present)
-  (PERSONAL_CHORES[kid] || []).forEach(c => list.push({ ...c, kind:'personal', maxTimes: DAYS.length }));
+  (PERSONAL_CHORES[kid] || []).forEach(c => list.push({ ...c, kind:'personal', maxTimes: c.maxTimes || DAYS.length }));
   if (cycle.vacDownstairs === kid) {
     list.push({ ...BONUS_CHORES.vacDownstairs, kind:'bonus' });
   }
@@ -605,7 +605,7 @@ function render() {
         // For bonus chores with fewer slots, allow any day but limit count
         const checkedCount = checks.filter(Boolean).length;
         const isDone = !!checks[i];
-        const atLimit = c.kind === 'bonus' && checkedCount >= slots && !isDone;
+        const atLimit = slots < DAYS.length && checkedCount >= slots && !isDone;
         const today = i === todayIdx;
         const cls = [
           'day-btn',
@@ -620,7 +620,7 @@ function render() {
         <div class="chore-row ${c.kind === 'bonus' ? 'bonus' : (c.kind === 'personal' ? 'personal' : '')}">
           <div class="chore-info">
             <div class="chore-name">${c.kind === 'bonus' ? '⭐ ' : (c.kind === 'personal' ? '🛏️ ' : '')}${c.name}</div>
-            <div class="chore-pts">${c.pts} pts each ${c.kind === 'bonus' ? '• max ' + slots + 'x/wk' : ''}</div>
+            <div class="chore-pts">${c.pts} pts each ${slots < DAYS.length ? '• max ' + slots + 'x/wk' : ''}</div>
           </div>
           <div class="day-grid">${buttons}</div>
         </div>
